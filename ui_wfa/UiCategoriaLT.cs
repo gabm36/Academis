@@ -4,11 +4,11 @@ using System.Data.SqlClient;
 
 namespace ui_wfa
 {
-    public partial class UiDisciplinaLT : Form
+    public partial class UiCategoriaLT : Form
     {
         private int idSelecionado = 0;
 
-        public UiDisciplinaLT()
+        public UiCategoriaLT()
         {
             InitializeComponent();
 
@@ -42,7 +42,7 @@ namespace ui_wfa
         {
             try
             {
-                Tabela.DataSource = BllDisciplina.Listar();
+                Tabela.DataSource = BllCategoria.Listar();
 
                 txtPesquisa.Text = "";
             }
@@ -66,11 +66,8 @@ namespace ui_wfa
                 else
                 {
                     DataTable tabela = (DataTable)Tabela.DataSource;
-                    string filterExpression = "disNome LIKE '%" + valorPesquisa + "%' OR " +
-                                              "disSigla LIKE '%" + valorPesquisa + "%' OR " +
-                                              "disObservacoes LIKE '%" + valorPesquisa + "%' OR " +
-                                              "disCursos LIKE '%" + valorPesquisa + "%' OR " +
-                                              "Convert(disId, 'System.String') LIKE '%" + valorPesquisa + "%'";
+                    string filterExpression = "catDescricao LIKE '%" + valorPesquisa + "%' OR " +
+                        "Convert(catId, 'System.String') LIKE '%" + valorPesquisa + "%'";
 
                     tabela.DefaultView.RowFilter = filterExpression;
                 }
@@ -88,7 +85,7 @@ namespace ui_wfa
                 if (Tabela.SelectedRows.Count > 0)
                 {
                     var linhaSelecionada = Tabela.SelectedRows[0];
-                    idSelecionado = Convert.ToInt32(linhaSelecionada.Cells["disId"].Value);
+                    idSelecionado = Convert.ToInt32(linhaSelecionada.Cells["catId"].Value);
                     TextStatusBar.Text = "Registro " + idSelecionado.ToString() + " selecionado.";
 
                     btAtualizar.Enabled = true;
@@ -111,7 +108,7 @@ namespace ui_wfa
         {
             try
             {
-                UiDisciplinaNE frm = new(Id);
+                UiCategoriaNE frm = new(Id);
                 frm.ShowDialog();
                 AtualizarTabela();
             }
@@ -127,17 +124,19 @@ namespace ui_wfa
             {
                 if (IndagarExclusao())
                 {
-                    BllDisciplina.Deletar(idSelecionado);
+                    BllCategoria.Deletar(idSelecionado);
                     AtualizarTabela();
                 }
             }
             catch (SqlException)
             {
-                DialogResult d = MessageBox.Show("A disciplina que você está tentando excluir têm vínculos com uma ou mais cursos. Deseja excluir TODOS esses vínculos também?", "Aviso", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                if (d == DialogResult.Yes)
+                String pergunta = "Você precisa excluir todos os produtos vinculados a essa categoria antes de excluí-lás. Deseja excluir os produtos vinculados?";
+                DialogResult exclusaoTotal = MessageBox.Show(pergunta, "Confirmação de exclusão", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+                if (exclusaoTotal == DialogResult.Yes)
                 {
-                    BllDisciplinaCurso.Deletar(idSelecionado, "disId");
-                    BllDisciplina.Deletar(idSelecionado);
+                    BllProduto.DeletarPorCategoria(idSelecionado);
+                    BllCategoria.Deletar(idSelecionado);
                     AtualizarTabela();
                 }
             }
